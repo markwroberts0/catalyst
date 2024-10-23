@@ -7,10 +7,11 @@ export function mapOnRampFinishReason(
     case 'stop':
       return 'stop';
     case 'length':
-    case 'model_length':
       return 'length';
     case 'tool_calls':
       return 'tool-calls';
+    case 'content_filter':
+      return 'content-filter';
     default:
       return 'unknown';
   }

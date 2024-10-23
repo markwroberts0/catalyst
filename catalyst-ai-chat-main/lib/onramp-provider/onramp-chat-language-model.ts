@@ -229,69 +229,51 @@ import {
     async doStream(
       options: Parameters<LanguageModelV1['doStream']>[0],
     ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
+      console.log('Entered doStream function');
+    
       const { args, warnings } = this.getArgs(options);
-
-      // Log headers and other request parameters
+    
       console.log('Headers from options:', options.headers);
       console.log('Headers from config:', this.config.headers());
       console.log('Combined headers:', combineHeaders(this.config.headers(), options.headers));
       console.log('Request URL:', `${this.config.baseURL}/chat/completions`);
       console.log('Fetch implementation:', this.config.fetch);
-
-      // Log the request body (args)
       console.log('Request Body:', { ...args, stream: true });
-
-  
-      const { responseHeaders, value: response } = await postJsonToApi({
-        url: `${this.config.baseURL}/chat/completions`,
-        headers: combineHeaders(this.config.headers(), options.headers),
-        body: { ...args, stream: true },
-        failedResponseHandler: onrampFailedResponseHandler,
-        successfulResponseHandler: createEventSourceResponseHandler(
-          onrampChatChunkSchema,
-        ),
-        abortSignal: options.abortSignal,
-        fetch: this.config.fetch,
-      });
-
-      console.log('Response:', { response});
-  
-      const { messages: rawPrompt, ...rawSettings } = args;
-  
-      let finishReason: LanguageModelV1FinishReason = 'unknown';
-      let usage: { promptTokens: number; completionTokens: number } = {
-        promptTokens: Number.NaN,
-        completionTokens: Number.NaN,
-      };
-      let isFirstChunk = true;
-      
+    
+      let responseHeaders;
+      let response;
+    
+      try {
+        const result = await postJsonToApi({
+          url: `${this.config.baseURL}/chat/completions`,
+          headers: combineHeaders(this.config.headers(), options.headers),
+          body: { ...args, stream: true },
+          failedResponseHandler: onrampFailedResponseHandler,
+          successfulResponseHandler: createEventSourceResponseHandler(onrampChatChunkSchema),
+          abortSignal: options.abortSignal,
+          fetch: this.config.fetch,
+        });
+        responseHeaders = result.responseHeaders; // Ensure responseHeaders is properly assigned
+        response = result.value;
+        console.log('Response received:', response);
+      } catch (error) {
+        console.error('Error during postJsonToApi:', error);
+        return;
+      }
+    
       console.log('Initiating streaming response...');
-       // Split the stream using tee()
-      const [stream1, stream2] = response.tee();
-
-      // Use stream1 to inspect the data via getReader
-      const reader = stream1.getReader();
-      reader.read().then(function processText({ done, value }) {
-        if (done) {
-          console.log('Stream is done.');
-          return;
-        }
-        console.log('Stream value:', new TextDecoder().decode(value));
-        reader.read().then(processText);
-      });
+    
       return {
-        stream: stream2.pipeThrough(
-          new TransformStream<
-            ParseResult<z.infer<typeof onrampChatChunkSchema>>,
-            LanguageModelV1StreamPart
-          >({
+        stream: response.pipeThrough(
+          new TransformStream<ParseResult<z.infer<typeof onrampChatChunkSchema>>, LanguageModelV1StreamPart>({
             transform(chunk, controller) {
               if (!chunk.success) {
                 controller.enqueue({ type: 'error', error: chunk.error });
                 return;
               }
+    
               let value = chunk.value;
-
+    
               if (typeof value === 'string') {
                 try {
                   value = JSON.parse(value);
@@ -301,77 +283,38 @@ import {
                   return;
                 }
               }
-
-              console.error('Parsed Response:', { value });
-  
-              console.error('Response:', {value});
-  
-              if (isFirstChunk) {
-                isFirstChunk = false;
-  
+    
+              console.log('Parsed Response:', value);
+    
+              if (value.choices && value.choices[0]?.delta?.content) {
                 controller.enqueue({
-                  type: 'response-metadata',
-                  ...getResponseMetadata(value),
+                  type: 'text-delta',
+                  textDelta: value.choices[0].delta.content,
                 });
               }
-  
+    
               if (value.usage != null) {
                 usage = {
                   promptTokens: value.usage.prompt_tokens,
                   completionTokens: value.usage.completion_tokens,
                 };
               }
-  
-              const choice = value.choices[0];
-  
-              if (choice?.finish_reason != null) {
-                finishReason = mapOnRampFinishReason(choice.finish_reason);
-              }
-  
-              if (choice?.delta == null) {
-                return;
-              }
-  
-              const delta = choice.delta;
-  
-              if (delta.content != null) {
-                controller.enqueue({
-                  type: 'text-delta',
-                  textDelta: delta.content,
-                });
-              }
-  
-              if (delta.tool_calls != null) {
-                for (const toolCall of delta.tool_calls) {
-                  // onramp tool calls come in one piece:
-                  controller.enqueue({
-                    type: 'tool-call-delta',
-                    toolCallType: 'function',
-                    toolCallId: toolCall.id,
-                    toolName: toolCall.function.name,
-                    argsTextDelta: toolCall.function.arguments,
-                  });
-                  controller.enqueue({
-                    type: 'tool-call',
-                    toolCallType: 'function',
-                    toolCallId: toolCall.id,
-                    toolName: toolCall.function.name,
-                    args: toolCall.function.arguments,
-                  });
-                }
-              }
             },
-  
+    
             flush(controller) {
-              controller.enqueue({ type: 'finish', finishReason, usage });
+              console.log('Flushing stream');
+              controller.enqueue({ type: 'finish', finishReason: 'unknown', usage: { promptTokens: NaN, completionTokens: NaN } });
             },
-          }),
+          })
         ),
-        rawCall: { rawPrompt, rawSettings },
-        rawResponse: { headers: responseHeaders },
+        rawCall: { rawPrompt: args.messages, rawSettings: args },
+        rawResponse: { headers: responseHeaders }, // Ensure responseHeaders is defined here
         warnings,
       };
     }
+    
+    
+    
   }
   
   // limited version of the schema, focussed on what is needed for the implementation
