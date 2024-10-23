@@ -25,7 +25,7 @@ export class OnRamp {
   constructor(options: OnRampProviderSettings = {}) {
     this.baseURL =
       withoutTrailingSlash(options.baseURL ?? options.baseUrl) ??
-      'https://api.onramp.ai/v1';
+      'https://onramp-api-dev.thankfulbeach-c26bca6d.eastus.azurecontainerapps.io';
 
     this.apiKey = options.apiKey;
     this.headers = options.headers;

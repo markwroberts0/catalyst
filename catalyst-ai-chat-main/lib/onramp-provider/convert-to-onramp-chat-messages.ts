@@ -23,26 +23,15 @@ import {
             content: content.map(part => {
               switch (part.type) {
                 case 'text': {
-                  return { type: 'text', text: part.text };
+                  return part.text;
                 }
                 case 'image': {
-                  return {
-                    type: 'image_url',
-                    image_url:
-                      part.image instanceof URL
-                        ? part.image.toString()
-                        : `data:${
-                            part.mimeType ?? 'image/jpeg'
-                          };base64,${convertUint8ArrayToBase64(part.image)}`,
-                  };
-                }
-                case 'file': {
                   throw new UnsupportedFunctionalityError({
-                    functionality: 'File content parts in user messages',
+                    functionality: 'Images in user messages',
                   });
                 }
               }
-            }),
+            }).join(''),
           });
           break;
         }

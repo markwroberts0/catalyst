@@ -139,18 +139,15 @@ import {
       }
   
       const baseArgs = {
-        // model id:
-        model: this.modelId,
-  
-        // model specific settings:
-        safe_prompt: this.settings.safePrompt,
-  
-        // response format:
-        response_format:
-          responseFormat?.type === 'json' ? { type: 'json_object' } : undefined,
-  
+        user: "tester",
         // messages:
+        persona: "dod",
         messages: convertToOnRampChatMessages(prompt),
+      };
+
+      return {
+        args: { ...baseArgs},
+        warnings,
       };
   
       switch (type) {
@@ -233,6 +230,17 @@ import {
       options: Parameters<LanguageModelV1['doStream']>[0],
     ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
       const { args, warnings } = this.getArgs(options);
+
+      // Log headers and other request parameters
+      console.log('Headers from options:', options.headers);
+      console.log('Headers from config:', this.config.headers());
+      console.log('Combined headers:', combineHeaders(this.config.headers(), options.headers));
+      console.log('Request URL:', `${this.config.baseURL}/chat/completions`);
+      console.log('Fetch implementation:', this.config.fetch);
+
+      // Log the request body (args)
+      console.log('Request Body:', { ...args, stream: true });
+
   
       const { responseHeaders, value: response } = await postJsonToApi({
         url: `${this.config.baseURL}/chat/completions`,
@@ -245,6 +253,8 @@ import {
         abortSignal: options.abortSignal,
         fetch: this.config.fetch,
       });
+
+      console.log('Response:', { response});
   
       const { messages: rawPrompt, ...rawSettings } = args;
   
@@ -254,9 +264,23 @@ import {
         completionTokens: Number.NaN,
       };
       let isFirstChunk = true;
-  
+      
+      console.log('Initiating streaming response...');
+       // Split the stream using tee()
+      const [stream1, stream2] = response.tee();
+
+      // Use stream1 to inspect the data via getReader
+      const reader = stream1.getReader();
+      reader.read().then(function processText({ done, value }) {
+        if (done) {
+          console.log('Stream is done.');
+          return;
+        }
+        console.log('Stream value:', new TextDecoder().decode(value));
+        reader.read().then(processText);
+      });
       return {
-        stream: response.pipeThrough(
+        stream: stream2.pipeThrough(
           new TransformStream<
             ParseResult<z.infer<typeof onrampChatChunkSchema>>,
             LanguageModelV1StreamPart
@@ -266,8 +290,21 @@ import {
                 controller.enqueue({ type: 'error', error: chunk.error });
                 return;
               }
+              let value = chunk.value;
+
+              if (typeof value === 'string') {
+                try {
+                  value = JSON.parse(value);
+                } catch (error) {
+                  console.error('Failed to parse chunk value:', error);
+                  controller.enqueue({ type: 'error', error });
+                  return;
+                }
+              }
+
+              console.error('Parsed Response:', { value });
   
-              const value = chunk.value;
+              console.error('Response:', {value});
   
               if (isFirstChunk) {
                 isFirstChunk = false;

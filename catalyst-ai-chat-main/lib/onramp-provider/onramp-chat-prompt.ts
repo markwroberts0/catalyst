@@ -13,22 +13,22 @@ export interface OnRampSystemMessage {
 
 export interface OnRampUserMessage {
   role: 'user';
-  content: Array<OnRampUserMessageContent>;
+  content: string;
 }
 
-export type OnRampUserMessageContent =
-  | OnRampUserMessageTextContent
-  | OnRampUserMessageImageContent;
+// export type OnRampUserMessageContent =
+//   | OnRampUserMessageTextContent
+//   | OnRampUserMessageImageContent;
 
-export interface OnRampUserMessageImageContent {
-  type: 'image_url';
-  image_url: string;
-}
+// export interface OnRampUserMessageImageContent {
+//   type: 'image_url';
+//   image_url: string;
+// }
 
-export interface OnRampUserMessageTextContent {
-  type: 'text';
-  text: string;
-}
+// export interface OnRampUserMessageTextContent {
+//   type: 'text';
+//   text: string;
+// }
 
 export interface OnRampAssistantMessage {
   role: 'assistant';
