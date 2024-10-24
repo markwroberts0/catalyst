@@ -229,16 +229,8 @@ import {
     async doStream(
       options: Parameters<LanguageModelV1['doStream']>[0],
     ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
-      console.log('Entered doStream function');
-    
+
       const { args, warnings } = this.getArgs(options);
-    
-      console.log('Headers from options:', options.headers);
-      console.log('Headers from config:', this.config.headers());
-      console.log('Combined headers:', combineHeaders(this.config.headers(), options.headers));
-      console.log('Request URL:', `${this.config.baseURL}/chat/completions`);
-      console.log('Fetch implementation:', this.config.fetch);
-      console.log('Request Body:', { ...args, stream: true });
     
       let responseHeaders;
       let response;
@@ -261,7 +253,6 @@ import {
         return;
       }
     
-      console.log('Initiating streaming response...');
     
       return {
         stream: response.pipeThrough(
@@ -284,8 +275,6 @@ import {
                 }
               }
     
-              console.log('Parsed Response:', value);
-    
               if (value.choices && value.choices[0]?.delta?.content) {
                 controller.enqueue({
                   type: 'text-delta',
@@ -302,7 +291,6 @@ import {
             },
     
             flush(controller) {
-              console.log('Flushing stream');
               controller.enqueue({ type: 'finish', finishReason: 'unknown', usage: { promptTokens: NaN, completionTokens: NaN } });
             },
           })

@@ -160,6 +160,17 @@ function IconEY({ className, ...props }: React.ComponentProps<'svg'>) {
   )
 }
 
+function IconDIU({ className, ...props }: React.ComponentProps<'img'>) {
+  return (
+    <img
+      src="https://www.diu.mil/images/diu.png"
+      alt="DIU logo"
+      className={cn('size-8', className)}
+      {...props}
+    />
+  );
+}
+
 function IconSeparator({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
@@ -506,6 +517,7 @@ export {
   IconVercel,
   IconGitHub,
   IconEY,
+  IconDIU,
   IconSeparator,
   IconArrowDown,
   IconArrowRight,
