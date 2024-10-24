@@ -36,24 +36,24 @@ export function ChatPanel({
 
   const exampleMessages = [
     {
-      heading: 'What are the',
-      subheading: 'trending memecoins today?',
-      message: `What are the trending memecoins today?`
+      heading: 'Composites for hypersonics',
+      subheading: 'lightweight, high-strength, up to 2000°F',
+      message: `An Air Force materials engineer is searching for a lightweight, high-strength composite material that can withstand temperatures up to 2000°F for use in hypersonic vehicle skins.`
     },
     {
-      heading: 'What is the price of',
-      subheading: '$DOGE right now?',
-      message: 'What is the price of $DOGE right now?'
+      heading: 'Anti-jamming SATCOM',
+      subheading: 'secure, global coverage for ground troops',
+      message: 'A Space Force communications officer needs a secure, anti-jamming satellite communication system that provides global coverage for ground troops.'
     },
     {
-      heading: 'I would like to buy',
-      subheading: '42 $DOGE',
-      message: `I would like to buy 42 $DOGE`
+      heading: 'Deep-sea AUV',
+      subheading: '6,000m depth, surveillance & reconnaissance',
+      message: `A Navy research team is seeking an autonomous underwater vehicle capable of deep-sea operations up to 6,000 meters depth for surveillance and reconnaissance missions.`
     },
     {
-      heading: 'What are some',
-      subheading: `recent events about $DOGE?`,
-      message: `What are some recent events about $DOGE?`
+      heading: 'Counter-drone technology',
+      subheading: `detect, track, and neutralize unauthorized drones`,
+      message: `A base security force is looking for technology that can detect, track, and neutralize unauthorized drones within a 5 km radius.`
     }
   ]
 

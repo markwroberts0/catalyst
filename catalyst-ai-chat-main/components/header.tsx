@@ -8,6 +8,7 @@ import { IconSeparator, IconEY, IconDIU } from '@/components/ui/icons'
 import { UserMenu } from '@/components/user-menu'
 import { SidebarMobile } from './sidebar-mobile'
 import { SidebarToggle } from './sidebar-toggle'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { ChatHistory } from './chat-history'
 import { Session } from '@/lib/types'
 
@@ -41,7 +42,7 @@ async function LoginOrUserMenu() {
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between w-full h-16 px-4 border-b shrink-0 bg-[#20364b]">
+    <header className="sticky top-0 z-50 flex items-center justify-between w-full h-16 px-4 border-b shrink-0">
       <div className="flex items-center">
         <Link href="/new" rel="nofollow">
           <IconDIU className="size-8 mb-2" />
@@ -57,9 +58,11 @@ export function Header() {
       </div>
       <div className="flex items-center">
         <React.Suspense fallback={<div className="flex-1 overflow-auto" />}>
-          <LoginOrUserMenu />
+          <ThemeToggle />
+          <LoginOrUserMenu /> 
         </React.Suspense>
       </div>
+     
     </header>
   )
 }
