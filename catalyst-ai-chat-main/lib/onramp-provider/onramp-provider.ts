@@ -58,7 +58,6 @@ export function createOnRamp(
         })}`,
         ...options.headers,
       }),
-      generateId: options.generateId ?? generateId,
     });
 
   const provider = function (

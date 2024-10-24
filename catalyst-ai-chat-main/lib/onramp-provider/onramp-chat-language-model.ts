@@ -150,40 +150,40 @@ import {
         warnings,
       };
   
-      switch (type) {
-        case 'regular': {
-          return {
-            args: { ...baseArgs, ...prepareToolsAndToolChoice(mode) },
-            warnings,
-          };
-        }
+      // switch (type) {
+      //   case 'regular': {
+      //     return {
+      //       args: { ...baseArgs, ...prepareToolsAndToolChoice(mode) },
+      //       warnings,
+      //     };
+      //   }
   
-        case 'object-json': {
-          return {
-            args: {
-              ...baseArgs,
-              response_format: { type: 'json_object' },
-            },
-            warnings,
-          };
-        }
+      //   case 'object-json': {
+      //     return {
+      //       args: {
+      //         ...baseArgs,
+      //         response_format: { type: 'json_object' },
+      //       },
+      //       warnings,
+      //     };
+      //   }
   
-        case 'object-tool': {
-          return {
-            args: {
-              ...baseArgs,
-              tool_choice: 'any',
-              tools: [{ type: 'function', function: mode.tool }],
-            },
-            warnings,
-          };
-        }
+      //   case 'object-tool': {
+      //     return {
+      //       args: {
+      //         ...baseArgs,
+      //         tool_choice: 'any',
+      //         tools: [{ type: 'function', function: mode.tool }],
+      //       },
+      //       warnings,
+      //     };
+      //   }
   
-        default: {
-          const _exhaustiveCheck: never = type;
-          throw new Error(`Unsupported type: ${_exhaustiveCheck}`);
-        }
-      }
+      //   default: {
+      //     const _exhaustiveCheck: never = type;
+      //     throw new Error(`Unsupported type: ${_exhaustiveCheck}`);
+      //   }
+      // }
     }
   
     async doGenerate(
@@ -208,20 +208,19 @@ import {
   
       return {
         text: choice.message.content ?? undefined,
-        toolCalls: choice.message.tool_calls?.map(toolCall => ({
-          toolCallType: 'function',
-          toolCallId: toolCall.id,
-          toolName: toolCall.function.name,
-          args: toolCall.function.arguments!,
-        })),
+        // toolCalls: choice.message.tool_calls?.map(toolCall => ({
+        //   toolCallType: 'function',
+        //   toolCallId: toolCall.id,
+        //   toolName: toolCall.function.name,
+        //   args: toolCall.function.arguments!,
+        // })),
         finishReason: mapOnRampFinishReason(choice.finish_reason),
         usage: {
-          promptTokens: response.usage.prompt_tokens,
-          completionTokens: response.usage.completion_tokens,
+          promptTokens: NaN,
+          completionTokens: NaN,
         },
         rawCall: { rawPrompt, rawSettings },
         rawResponse: { headers: responseHeaders },
-        response: getResponseMetadata(response),
         warnings,
       };
     }
@@ -234,26 +233,19 @@ import {
     
       let responseHeaders;
       let response;
-    
-      try {
-        const result = await postJsonToApi({
-          url: `${this.config.baseURL}/chat/completions`,
-          headers: combineHeaders(this.config.headers(), options.headers),
-          body: { ...args, stream: true },
-          failedResponseHandler: onrampFailedResponseHandler,
-          successfulResponseHandler: createEventSourceResponseHandler(onrampChatChunkSchema),
-          abortSignal: options.abortSignal,
-          fetch: this.config.fetch,
-        });
-        responseHeaders = result.responseHeaders; // Ensure responseHeaders is properly assigned
-        response = result.value;
-        console.log('Response received:', response);
-      } catch (error) {
-        console.error('Error during postJsonToApi:', error);
-        return;
-      }
-    
-    
+
+      const result = await postJsonToApi({
+        url: `${this.config.baseURL}/chat/completions`,
+        headers: combineHeaders(this.config.headers(), options.headers),
+        body: { ...args, stream: true },
+        failedResponseHandler: onrampFailedResponseHandler,
+        successfulResponseHandler: createEventSourceResponseHandler(onrampChatChunkSchema),
+        abortSignal: options.abortSignal,
+        fetch: this.config.fetch,
+      });
+      responseHeaders = result.responseHeaders; // Ensure responseHeaders is properly assigned
+      response = result.value;
+
       return {
         stream: response.pipeThrough(
           new TransformStream<ParseResult<z.infer<typeof onrampChatChunkSchema>>, LanguageModelV1StreamPart>({
@@ -282,12 +274,6 @@ import {
                 });
               }
     
-              if (value.usage != null) {
-                usage = {
-                  promptTokens: value.usage.prompt_tokens,
-                  completionTokens: value.usage.completion_tokens,
-                };
-              }
             },
     
             flush(controller) {

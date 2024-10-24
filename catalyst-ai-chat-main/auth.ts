@@ -3,7 +3,6 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { authConfig } from './auth.config'
 import { z } from 'zod'
 import axios from 'axios'
-import qs from 'qs'
 
 export const { auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -33,7 +32,7 @@ export const { auth, signIn, signOut } = NextAuth({
             // Make a request to the /token endpoint
             const response = await axios.post(
               'https://onramp-api-dev.thankfulbeach-c26bca6d.eastus.azurecontainerapps.io/token',
-              qs.stringify({
+              JSON.stringify({
                 grant_type: 'password',
                 username: email,
                 password: password
