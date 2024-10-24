@@ -1,23 +1,15 @@
 import NextAuth from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
+import Credentials from 'next-auth/providers/credentials'
 import { authConfig } from './auth.config'
 import { z } from 'zod'
-import axios from 'axios'
+import { getStringFromBuffer } from './lib/utils'
+import { getUser } from './app/login/actions'
 
 export const { auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' }
-      },
+    Credentials({
       async authorize(credentials) {
-        if (!credentials) {
-          return null
-        }
-
         const parsedCredentials = z
           .object({
             email: z.string().email(),
@@ -27,32 +19,21 @@ export const { auth, signIn, signOut } = NextAuth({
 
         if (parsedCredentials.success) {
           const { email, password } = parsedCredentials.data
+          const user = await getUser(email)
 
-          try {
-            // Make a request to the /token endpoint
-            const response = await axios.post(
-              'https://onramp-api-dev.thankfulbeach-c26bca6d.eastus.azurecontainerapps.io/token',
-              JSON.stringify({
-                grant_type: 'password',
-                username: email,
-                password: password
-              }),
-              {
-                headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded'
-                }
-              }
-            )
+          if (!user) return null
 
-            if (response.status === 200) {
-              // Token received successfully
-              const { access_token } = response.data
-              return { id: email, email, access_token }
-            } else {
-              return null
-            }
-          } catch (error) {
-            console.error('Error authenticating with API', error)
+          const encoder = new TextEncoder()
+          const saltedPassword = encoder.encode(password + user.salt)
+          const hashedPasswordBuffer = await crypto.subtle.digest(
+            'SHA-256',
+            saltedPassword
+          )
+          const hashedPassword = getStringFromBuffer(hashedPasswordBuffer)
+
+          if (hashedPassword === user.password) {
+            return user
+          } else {
             return null
           }
         }
