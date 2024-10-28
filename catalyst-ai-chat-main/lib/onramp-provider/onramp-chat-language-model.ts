@@ -355,8 +355,8 @@ import {
       type: 'function',
       function: {
         name: tool.name,
-        description: tool.description,
-        parameters: tool.parameters,
+        // description: tool.description,
+        // parameters: tool.parameters,
       },
     }));
   

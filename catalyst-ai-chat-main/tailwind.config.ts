@@ -18,7 +18,7 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-geist-sans)'],
+        sans: ['Montserrat', 'Roboto', 'sans-serif'],
         mono: ['var(--font-geist-mono)']
       },
       colors: {
